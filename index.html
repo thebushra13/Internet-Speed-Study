@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Community Internet Speed Study</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <style>
+    .gradient-bg {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .card-hover {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card-hover:hover {
+      transform: translateY(-5px);
+      box-shadow:
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .speed-meter {
+      position: relative;
+      background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+      height: 8px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .speed-indicator {
+      position: absolute;
+      top: -6px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border: 2px solid #3b82f6;
+      border-radius: 50%;
+      transform: translateX(-50%);
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <!-- Header -->
+  <header class="gradient-bg text-white shadow-lg">
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row items-center justify-between">
+        <div class="text-center md:text-left mb-6 md:mb-0">
+          <h1 class="text-4xl font-bold mb-2">Community Internet Speed Study</h1>
+          <p class="text-blue-100">Track and analyze internet speeds across different locations and times</p>
+        </div>
+        <img
+          src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/22a09d9e-a618-427a-b522-d6bab894757b.png"
+          alt="Network connectivity visualization"
+          class="w-48 h-36 object-cover rounded-lg shadow-lg"
+        />
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-8">
+    <!-- Stats Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow-md p-6 text-center card-hover">
+        <div class="text-3xl font-bold text-blue-600" id="total-tests">0</div>
+        <div class="text-gray-600">Total Tests</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-6 text-center card-hover">
+        <div class="text-3xl font-bold text-green-600" id="avg-download">0 Mbps</div>
+        <div class="text-gray-600">Avg Download</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-6 text-center card-hover">
+        <div class="text-3xl font-bold text-purple-600" id="avg-upload">0 Mbps</div>
+        <div class="text-gray-600">Avg Upload</div>
+      </div>
+      <div class="bg-white rounded-lg shadow-md p-6 text-center card-hover">
+        <div class="text-3xl font-bold text-orange-600" id="locations-count">0</div>
+        <div class="text-gray-600">Locations</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Input Form -->
+      <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Submit Speed Test</h2>
+        <form id="speed-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Location Type</label>
+            <select
+              id="location"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            >
+              <option value="">Select Location</option>
+              <option value="Home">Home</option>
+              <option value="College">College</option>
+              <option value="Cybercafe">Cybercafé</option>
+              <option value="Library">Library</option>
+              <option value="Office">Office</option>
+              <option value="Public WiFi">Public WiFi</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Time of Day</label>
+            <select
+              id="time-of-day"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              required
+            >
+              <option value="">Select Time</option>
+              <option value="Morning (6AM-12PM)">Morning (6AM-12PM)</option>
+              <option value="Afternoon (12PM-6PM)">Afternoon (12PM-6PM)</option>
+              <option value="Evening (6PM-12AM)">Evening (6PM-12AM)</option>
+              <option value="Night (12AM-6AM)">Night (12AM-6AM)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Download Speed (Mbps)</label>
+            <input
+              type="number"
+              id="download-speed"
+              step="0.01"
+              min="0"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., 45.2"
+              required
+            />
+            <div class="speed-meter mt-2">
+              <div class="speed-indicator" style="left: 0%;"></div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Upload Speed (Mbps)</label>
+            <input
+              type="number"
+              id="upload-speed"
+              step="0.01"
+              min="0"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., 12.5"
+              required
+            />
+            <div class="speed-meter mt-2">
+              <div class="speed-indicator" style="left: 0%;"></div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">ISP Provider</label>
+            <input
+              type="text"
+              id="isp"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., Comcast, Verizon"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+            <textarea
+              id="notes"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              rows="3"
+              placeholder="Any additional observations..."
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-200"
+          >
+            Submit Speed Test
+          </button>
+        </form>
+      </div>
+
+      <!-- Data Visualization -->
+      <div class="bg-white rounded-lg shadow-md p-6 card-hover">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Data Analysis</h2>
+
+        <div class="mb-6">
+          <h3 class="text-lg font-semibold mb-4">Speed by Location</h3>
+          <canvas id="location-chart" height="200"></canvas>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-lg font-semibold mb-4">Speed by Time of Day</h3>
+          <canvas id="time-chart" height="200"></canvas>
+        </div>
+
+        <div class="mb-6">
+          <h3 class="text-lg font-semibold mb-4">ISP Comparison</h3>
+          <canvas id="isp-chart" height="200"></canvas>
+        </div>
+
+        <div class="flex space-x-4">
+          <button
+            id="export-csv"
+            class="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-green-700 transition duration-200"
+          >
+            Export CSV
+          </button>
+          <button
+            id="clear-data"
+            class="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition duration-200"
+          >
+            Clear All Data
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Tests Table -->
+    <section class="mt-12 bg-white rounded-lg shadow-md p-6 card-hover">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Recent Tests</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-left border-collapse">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="py-2 px-3 border border-gray-300">Location</th>
+              <th class="py-2 px-3 border border-gray-300">Time of Day</th>
+              <th class="py-2 px-3 border border-gray-300">Download (Mbps)</th>
+              <th class="py-2 px-3 border border-gray-300">Upload (Mbps)</th>
+              <th class="py-2 px-3 border border-gray-300">ISP</th>
+              <th class="py-2 px-3 border border-gray-300">Notes</th>
+            </tr>
+          </thead>
+          <tbody id="recent-tests" class="divide-y divide-gray-200"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-center py-6 text-gray-600 text-sm">
+    &copy; 2025 Community Internet Speed Study. All rights reserved.
+  </footer>
+
+  <script src="form.js"></script>
+  <script src="chart.js"></script>
+  <script src="table.js"></script>
+  <script src="export.js"></script>
+</body>
+</html>
